@@ -16,7 +16,7 @@ const nextElfIndexes = calories.reduce((result, currentValue, currentIndex) => {
   ]
 }, [] as number[])
 
-const groupedCalories = nextElfIndexes.reduce((result, currentValue, currentIndex) => {
+export const groupedCalories = nextElfIndexes.reduce((result, currentValue, currentIndex) => {
   const group = calories.slice(currentIndex > 0 ? nextElfIndexes[currentIndex - 1] + 1 : 0, currentValue)
 
   return [
@@ -25,10 +25,17 @@ const groupedCalories = nextElfIndexes.reduce((result, currentValue, currentInde
   ]
 }, [] as string[][])
 
-const mostCalories = groupedCalories.reduce((result, group) => {
+export const allCalories = groupedCalories.reduce((results, group) => {
   const totalCaloriesForElf = group.reduce((total, elfCalories) => total + parseInt(elfCalories, 10), 0)
 
-  return totalCaloriesForElf > result ? totalCaloriesForElf : result
-}, 0)
+  return [
+    ...results,
+    totalCaloriesForElf,
+  ]
+}, [] as number[])
+
+export const topCalories = allCalories.sort((a, b) => b - a).slice(0, 3)
+
+export const mostCalories = topCalories[0]
 
 console.log(mostCalories)

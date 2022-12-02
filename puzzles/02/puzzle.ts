@@ -1,6 +1,6 @@
 import path from 'https://deno.land/std@0.167.0/node/path.ts'
 import { readFileSync } from 'https://deno.land/std@0.167.0/node/fs.ts'
-import {outcomeMap, outcomeScores, Round, shapeScores} from "./types.ts";
+import { outcomeScores, responseToShapeMap, Round } from "./types.ts";
 
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url))
 
@@ -8,15 +8,14 @@ const input: string = readFileSync(path.resolve(__dirname, './input.tsv'), 'utf-
 
 const strategy = input.split('\n').map(
   (roundString) => ({
-    opponent: roundString[0],
+    opponentShape: roundString[0],
     response: roundString[2],
   } as Round)
 )
 
-const roundOutcome = ({ opponent, response }: Round) => {
-  const shapeScore = shapeScores[response]
-  const outcome = outcomeMap[opponent][response]
-  const outcomeScore = outcomeScores[outcome]
+const roundOutcome = ({ opponentShape, response }: Round) => {
+  const shapeScore = responseToShapeMap[opponentShape][response]
+  const outcomeScore = outcomeScores[response]
 
   return {
     shapeScore,

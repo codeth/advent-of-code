@@ -28,3 +28,19 @@ const fullyOverlappingAssigmentPairs = cleanupPairs.reduce((total, nextPair) => 
 }, 0)
 
 console.log(fullyOverlappingAssigmentPairs)
+
+const isOverlapping = ([a, b]: CleanupAssignmentPair) => {
+  const aStartsInB = a.start >= b.start && a.start <= b.end
+  const aEndsInB = a.end >= b.start && a.end <= b.end
+  const bStartsInA = b.start >= a.start && b.start <= a.end
+  const bEndsInA = b.end >= a.start && b.end <= a.end
+
+  return aStartsInB || aEndsInB || bStartsInA || bEndsInA
+}
+
+const overlappingAssigmentPairs = cleanupPairs.reduce((total, nextPair) => {
+  if (isOverlapping(nextPair)) total += 1
+  return total
+}, 0)
+
+console.log(overlappingAssigmentPairs)

@@ -38,3 +38,5 @@ export type RucksackContents = (LowerAlpha | UpperAlpha)[]
 export type RucksackCompartment = RucksackContents
 
 export type Rucksack = [RucksackCompartment, RucksackCompartment]
+
+export type ElfGroup = [RucksackContents, RucksackContents, RucksackContents]

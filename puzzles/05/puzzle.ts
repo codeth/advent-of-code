@@ -37,7 +37,7 @@ const stacksByColumnId = stackIds.reduce((result, nextId) => {
 }, {} as StacksByColumnId)
 
 steps.forEach(({ move, from, to }) => {
-  stacksByColumnId[to].push(...stacksByColumnId[from].splice(-move).reverse())
+  stacksByColumnId[to].push(...stacksByColumnId[from].splice(-move))
 })
 
 const topCrates = stackIds.reduce((result, nextStackId) => {

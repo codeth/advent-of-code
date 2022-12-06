@@ -1,1 +1,0 @@
-export type Marker = [string, string, string, string]

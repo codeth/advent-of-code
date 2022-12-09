@@ -96,3 +96,12 @@ const totalSizeOfSub100kDirectories = sizedDirectories
   }, 0)
 
 console.log(totalSizeOfSub100kDirectories)
+
+const currentFreeSpace = 70000000 - processCommandGroup(commandGroups[0]).size
+const spaceToFreeUp = 30000000 - currentFreeSpace
+
+const candidatesForDeletion = sizedDirectories
+  .filter(({ size }) => size >= spaceToFreeUp)
+  .sort((a, b) => a.size - b.size)
+
+console.log(candidatesForDeletion[0].size)

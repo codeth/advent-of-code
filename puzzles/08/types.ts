@@ -13,3 +13,7 @@ export interface TreeVisibility {
 
 export type TreeVisibilityInColumn = Pick<TreeVisibility, 'top' | 'bottom'>
 export type TreeVisibilityInRow = Pick<TreeVisibility, 'left' | 'right'>
+
+export interface TreeViewingPosition {
+  scenicScore: number
+}

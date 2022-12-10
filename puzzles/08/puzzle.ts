@@ -1,6 +1,12 @@
 import path from 'https://deno.land/std@0.167.0/node/path.ts'
 import { readFileSync } from 'https://deno.land/std@0.167.0/node/fs.ts'
-import {TreePosition, TreeVisibility, TreeVisibilityInColumn, TreeVisibilityInRow} from "./types.ts";
+import {
+  TreePosition,
+  TreeViewingPosition,
+  TreeVisibility,
+  TreeVisibilityInColumn,
+  TreeVisibilityInRow
+} from "./types.ts";
 
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url))
 
@@ -71,3 +77,46 @@ const innerVisibleTrees = innerTreeVisibilityGrid.reduce((gridTotal, row) => {
 }, 0)
 
 console.log(innerVisibleTrees + visiblePerimeter)
+
+const viewingDistance = (current: TreePosition, trees: TreePosition[]) => {
+  let isBlocked = false
+
+  return trees.reduce((distance, tree) => {
+    if (isBlocked) return distance
+    if (tree.height >= current.height) isBlocked = true
+    distance += 1
+    return distance
+  }, 0)
+}
+
+const treeViewingPositions: TreeViewingPosition[][] = treeGrid
+  .map(row => row.map(tree => {
+    const toLeft = treeGrid[tree.row].slice(0, tree.column).reverse()
+    const toRight = treeGrid[tree.row].slice(tree.column + 1)
+    const toTop = treeGrid.slice(0, tree.row).reverse().map(row => row[tree.column])
+    const toBottom = treeGrid.slice(tree.row + 1).map(row => row[tree.column])
+
+    const viewingDistanceTop = viewingDistance(tree, toTop)
+    const viewingDistanceLeft = viewingDistance(tree, toLeft)
+    const viewingDistanceBottom = viewingDistance(tree, toBottom)
+    const viewingDistanceRight = viewingDistance(tree, toRight)
+
+    const scenicScore = viewingDistanceTop
+      * viewingDistanceLeft
+      * viewingDistanceBottom
+      * viewingDistanceRight
+
+    return { scenicScore }
+  }))
+
+const topScenicScore = treeViewingPositions.reduce((gridScore, row) => {
+  const score = row.reduce((rowScore, tree) => {
+    if (tree.scenicScore < rowScore) return rowScore
+    return tree.scenicScore
+  }, 0)
+
+  if (score < gridScore) return gridScore
+  return score
+}, 0)
+
+console.log(topScenicScore)

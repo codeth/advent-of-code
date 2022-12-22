@@ -17,73 +17,114 @@ const movements = input.split('\n')
 
 const newPosition = (row: number, column: number): Position => ({ row, column })
 
-const newMovementPosition = (row: number, column: number, hasTailVisited = false): MovementPosition => {
+const newMovementPosition = (row: number, column: number): MovementPosition => {
   return {
     ...newPosition(row, column),
-    hasTailVisited,
   }
 }
 
-const currentPosition: Record<'head' | 'tail', Position> = {
-  head: newPosition(0, 0),
-  tail: newPosition(0, 0),
-}
+const knots = 10
+const head = 0
+const tail = 9
+
+const knotPositions = new Map<number, Position>(
+  Array(knots)
+    .fill(newPosition(0, 0))
+    .map((position, index) => ([index, position]))
+)
 
 const moveRight = ({ row, column }: Position) => newMovementPosition(row, column + 1)
 const moveLeft = ({ row, column }: Position) => newMovementPosition(row, column - 1)
 const moveUp = ({ row, column }: Position) => newMovementPosition(row + 1, column)
 const moveDown = ({ row, column }: Position) => newMovementPosition(row - 1, column)
 
-const updateHeadPosition = (move: (position: Position) => MovementPosition): MovementPosition => {
-  const nextPosition = move(currentPosition.head)
+const moveUpAndRight = ({ row, column }: Position) => newMovementPosition(row + 1, column + 1)
+const moveUpAndLeft = ({ row, column }: Position) => newMovementPosition(row + 1, column - 1)
+const moveDownAndRight = ({ row, column }: Position) => newMovementPosition(row - 1, column + 1)
+const moveDownAndLeft = ({ row, column }: Position) => newMovementPosition(row - 1, column - 1)
 
-  currentPosition.head = {
+const updateHeadPosition = (move: (position: Position) => MovementPosition): MovementPosition => {
+  const nextPosition = move(knotPositions.get(head)!)
+
+  knotPositions.set(head, {
     row: nextPosition.row,
     column: nextPosition.column,
-  }
+  })
+
+  // console.log(`HEAD moved to r${nextPosition.row}:c${nextPosition.column}`)
 
   return nextPosition
 }
 
-const updateTailPosition = (direction: Direction) => {
-  const { row, column } = currentPosition.head
+const tailMoves: MovementPositions = [newMovementPosition(0, 0)]
+
+const updateNextPosition = (key: number) => {
+  const { row, column } = knotPositions.get(key - 1)!
 
   const acceptableRows = [
-    row,
     row - 1,
+    row,
     row + 1
   ]
 
   const acceptableColumns = [
-    column,
     column - 1,
+    column,
     column + 1
   ]
 
-  if (acceptableRows.includes(currentPosition.tail.row) &&
-    acceptableColumns.includes(currentPosition.tail.column)) {
-    return newMovementPosition(currentPosition.tail.row, currentPosition.tail.column, true)
+  const current = knotPositions.get(key)!
+
+  if (acceptableRows.includes(current.row) &&
+    acceptableColumns.includes(current.column)) {
+    // console.log(`${key} did not move from r${current.row}:c${current.column}`)
+    return newMovementPosition(current.row, current.column)
   }
 
-  const tail = (() => {
-    switch (direction) {
-      case 'U':
-        return newMovementPosition(row - 1, column, true)
-      case 'D':
-        return newMovementPosition(row + 1, column, true)
-      case 'L':
-        return newMovementPosition(row, column + 1, true)
-      case 'R':
-        return newMovementPosition(row, column - 1, true)
+  const rowDifference = row - current.row
+  const columnDifference = column - current.column
+
+  const nextMove = (() => {
+    switch (true) {
+      case rowDifference > 0:
+        return columnDifference > 0
+          ? moveUpAndRight(current)
+          : columnDifference === 0
+            ? moveUp(current)
+            : moveUpAndLeft(current)
+      case rowDifference < 0:
+        return columnDifference > 0
+          ? moveDownAndRight(current)
+          : columnDifference === 0
+            ? moveDown(current)
+            : moveDownAndLeft(current)
+      case columnDifference > 0:
+        return rowDifference > 0
+          ? moveUpAndRight(current)
+          : rowDifference === 0
+            ? moveRight(current)
+            : moveDownAndRight(current)
+      case columnDifference < 0:
+        return rowDifference > 0
+          ? moveUpAndLeft(current)
+          : rowDifference === 0
+            ? moveLeft(current)
+            : moveDownAndLeft(current)
     }
-  })()
+  })()!
 
-  currentPosition.tail = {
-    row: tail.row,
-    column: tail.column,
-  }
+  const next = newMovementPosition(nextMove.row, nextMove.column)
 
-  return tail
+  // console.log(`${key} moved to r${next.row}:c${next.column}`)
+
+  if (key === tail) tailMoves.push(next)
+
+  knotPositions.set(key, {
+    row: next.row,
+    column: next.column
+  })
+
+  return next
 }
 
 const processMovement = (movement: Movement, positions: MovementPositions) => {
@@ -113,28 +154,35 @@ const processMovement = (movement: Movement, positions: MovementPositions) => {
       positions.push(head)
     }
 
-    const tail = updateTailPosition(movement.direction)
+    knotPositions.forEach((value, key) => {
+      if (key > 0) {
+        const next = updateNextPosition(key)
 
-    const tailPositionIndex = positions.findIndex(
-      ({ row, column }) =>
-        row === tail.row &&
-        column === tail.column
-    )
+        const nextPositionIndex = positions.findIndex(
+          ({ row, column }) =>
+            row === next.row &&
+            column === next.column
+        )
 
-    if (tailPositionIndex > -1) {
-      positions.splice(tailPositionIndex, 1, tail)
-    }
+        if (nextPositionIndex > -1) {
+          positions.splice(nextPositionIndex, 1, next)
+        }
+      }
+    })
   })
 }
 
 const movementPath = movements.reduce((positions, movement) => {
   processMovement(movement, positions)
   return positions
-}, [newMovementPosition(0, 0, true)])
+}, [newMovementPosition(0, 0)])
 
-const positionsVisitedByTail = movementPath.reduce((uniqueVisits, position) => {
-  if (position.hasTailVisited) uniqueVisits++
-  return uniqueVisits
-}, 0)
+const uniqueTailPositions = tailMoves.reduce((result, move) => {
+  const existingPosition = result.find(({ row, column }) => row === move.row && column === move.column)
 
-console.log(positionsVisitedByTail)
+  if (!existingPosition) result.push(move)
+
+  return result
+}, [] as MovementPositions)
+
+console.log(uniqueTailPositions.length)

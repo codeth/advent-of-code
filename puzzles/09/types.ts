@@ -10,8 +10,6 @@ export interface Position {
   column: number
 }
 
-export interface MovementPosition extends Position {
-  hasTailVisited: boolean
-}
+export interface MovementPosition extends Position {}
 
 export type MovementPositions = MovementPosition[]

@@ -1,6 +1,6 @@
 import path from 'https://deno.land/std@0.167.0/node/path.ts'
 import { readFileSync } from 'https://deno.land/std@0.167.0/node/fs.ts'
-import {Cycle, Instruction} from "./types.ts";
+import { Cycle, Instruction } from "./types.ts";
 
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url))
 
@@ -8,28 +8,46 @@ const input: string = readFileSync(path.resolve(__dirname, './input.txt'), 'utf-
 
 const program = input.split('\n') as Instruction[]
 
-const x = 1
+const newCycle = (
+  id: number,
+  instruction: Instruction,
+  instructionIndex: number,
+  valueBefore: number,
+  valueAfter?: number
+): Cycle => {
+  return {
+    id,
+    instruction,
+    instructionIndex,
+    valueBefore,
+    valueAfter: valueAfter !== undefined ? valueAfter : valueBefore
+  }
+}
 
-const cycles = program.reduce((result, instruction) => {
-  const valueBefore = result[result.length - 1]?.valueAfter || x
+const cycles = program.reduce((result, instruction, currentIndex) => {
+  const valueBefore = result[result.length - 1]?.valueAfter
+
+  const nextCycleUnchanged = newCycle(result.length, instruction, currentIndex, valueBefore)
 
   if (instruction === 'noop') {
-    result.push({ id: result.length + 1, instruction, valueBefore, valueAfter: valueBefore })
-    return result
+    return [
+      ...result,
+      nextCycleUnchanged,
+    ]
   }
 
   const [, value] = instruction.split(' ')
 
   const newCycles = [
-    { id: result.length + 1, instruction, valueBefore, valueAfter: valueBefore },
-    { id: result.length + 2, instruction, valueBefore, valueAfter: valueBefore + parseInt(value, 10) },
+    nextCycleUnchanged,
+    newCycle(result.length + 1, instruction, currentIndex, valueBefore, valueBefore + parseInt(value, 10)),
   ]
 
   return [
     ...result,
     ...newCycles,
   ]
-}, [] as Cycle[])
+}, [newCycle(0, 'start', 0, 1)] as Cycle[])
 
 const targetCycles = [20, 60, 100, 140, 180, 220]
 

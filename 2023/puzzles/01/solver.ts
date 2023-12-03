@@ -1,40 +1,12 @@
-import { open } from "node:fs/promises";
-import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
-const __dirname = new URL(".", import.meta.url).pathname;
+import { inputToArray, makeInputProcessor } from "../../utils/inputs.js";
 
-export type LineHandler = (line: string) => void | Promise<void>;
-export type LineTransformer<Return = string> = (
-  line: string,
-) => Return | Promise<Return>;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-export const processInput = async (processLine: LineHandler) => {
-  const file = await open(join(__dirname, "input.txt"));
-
-  for await (const line of file.readLines()) {
-    try {
-      await processLine(line);
-    } catch (error) {
-      console.log(`Unable to process`);
-      console.error(error);
-    }
-  }
-};
-
-export const inputToArray = async <ItemType = string>(
-  transformLine?: LineTransformer<ItemType>,
-) => {
-  const results: ItemType[] = [];
-
-  const processLineAndPush = async (line: string) => {
-    const processedLine = (await transformLine?.(line)) ?? (line as ItemType);
-    results.push(processedLine);
-  };
-
-  await processInput(processLineAndPush);
-
-  return results;
-};
+export const processInput = makeInputProcessor(__dirname);
 
 export enum NumberMap {
   one = 1,
@@ -143,7 +115,7 @@ export const toCalibrationValue = (line: string) => {
 };
 
 export const getCalibrationValues = async () => {
-  return inputToArray(toCalibrationValue);
+  return inputToArray(processInput, toCalibrationValue);
 };
 
 export const getSumOfCalibrationValues = (calibrationValues: number[]) => {

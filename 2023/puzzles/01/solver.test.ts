@@ -2,9 +2,10 @@ import {
   toCalibrationValue,
   getCalibrationValues,
   getSumOfCalibrationValues,
-  inputToArray,
   extractDigits,
+  processInput,
 } from "./solver.js";
+import { inputToArray } from "../../utils/inputs.js";
 
 test("returns the expected values from the example input", () => {
   const calibrationValues = [
@@ -47,7 +48,7 @@ test("getCalibrationValues returns an array of two-digit numbers", async () => {
 });
 
 test("getCalibrationValues matches the input length", async () => {
-  const processedInput = await inputToArray();
+  const processedInput = await inputToArray(processInput);
   const calibrationValues = await getCalibrationValues();
 
   expect(calibrationValues).toHaveLength(processedInput.length);

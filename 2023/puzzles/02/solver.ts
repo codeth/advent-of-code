@@ -17,6 +17,8 @@ export interface CubeSample {
 export interface GameRecord {
   id: number;
   reveals: CubeSample[];
+  minimumCubes: Required<CubeSample>;
+  power: number;
 }
 
 export const toCubeSample = (sample: string): CubeSample => {
@@ -33,15 +35,32 @@ export const toCubeSample = (sample: string): CubeSample => {
 };
 
 export const toGameRecord = (game: string): GameRecord => {
-  const [gameId, ...reveals] = game
+  const [gameId, ...revealsData] = game
     .split(/(:|;) /g)
     .filter((value) => ![":", ";"].includes(value));
 
   if (!gameId) throw new Error("No game ID");
 
+  const reveals = revealsData.map(toCubeSample);
+
+  const minimumCubes = reveals.reduce<Required<CubeSample>>(
+    (result, { red, green, blue }) => {
+      return {
+        red: red && red > result.red ? red : result.red,
+        green: green && green > result.green ? green : result.green,
+        blue: blue && blue > result.blue ? blue : result.blue,
+      };
+    },
+    { red: 0, blue: 0, green: 0 },
+  );
+
+  const power = minimumCubes.red * minimumCubes.green * minimumCubes.blue;
+
   return {
     id: parseInt(gameId.replace("Game ", ""), 10),
-    reveals: reveals.map(toCubeSample),
+    reveals,
+    minimumCubes,
+    power,
   };
 };
 
@@ -81,5 +100,11 @@ export const calculatePossibilities = (
 export const getSumOfGameIds = (games: GameRecord[]) => {
   return games.reduce((sum, next) => {
     return sum + next.id;
+  }, 0);
+};
+
+export const getSumOfGamePower = (games: GameRecord[]) => {
+  return games.reduce((sum, next) => {
+    return sum + next.power;
   }, 0);
 };

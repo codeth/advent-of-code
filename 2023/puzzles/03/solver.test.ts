@@ -1,6 +1,7 @@
 import {
   findPartNumbers,
   flattenEngineSchematics,
+  processSchematicData,
   sumOfPartNumbers,
   toEngineSchematic,
 } from "./solver.js";
@@ -27,4 +28,10 @@ test("returns the expected values from the example input", () => {
   expect(sumOfPartNumbers(partNumbers)).toEqual(4361);
 });
 
-test("returns the correct sums from the input data", async () => {});
+test("returns the correct sums from the input data", async () => {
+  const { symbols, numbers } = await processSchematicData();
+
+  const partNumbers = findPartNumbers({ symbols, numbers });
+
+  expect(sumOfPartNumbers(partNumbers)).toEqual(526404);
+});

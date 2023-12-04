@@ -1,8 +1,10 @@
 import {
+  calculateGearRatios,
+  findGearParts,
   findPartNumbers,
   flattenEngineSchematics,
   processSchematicData,
-  sumOfPartNumbers,
+  sumOf,
   toEngineSchematic,
 } from "./solver.js";
 
@@ -25,7 +27,14 @@ test("returns the expected values from the example input", () => {
 
   expect(partNumbers).not.toContain(114);
   expect(partNumbers).not.toContain(58);
-  expect(sumOfPartNumbers(partNumbers)).toEqual(4361);
+  expect(sumOf(partNumbers)).toEqual(4361);
+
+  // Part 2
+  const gearParts = findGearParts({ symbols, numbers });
+  const gearRatios = calculateGearRatios(gearParts);
+
+  expect(gearRatios).toEqual([16345, 451490]);
+  expect(sumOf(gearRatios)).toEqual(467835);
 });
 
 test("returns the correct sums from the input data", async () => {
@@ -33,5 +42,11 @@ test("returns the correct sums from the input data", async () => {
 
   const partNumbers = findPartNumbers({ symbols, numbers });
 
-  expect(sumOfPartNumbers(partNumbers)).toEqual(526404);
+  expect(sumOf(partNumbers)).toEqual(526404);
+
+  // Part 2
+  const gearParts = findGearParts({ symbols, numbers });
+  const gearRatios = calculateGearRatios(gearParts);
+
+  expect(sumOf(gearRatios)).toEqual(84399773);
 });

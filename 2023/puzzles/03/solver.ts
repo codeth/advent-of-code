@@ -143,19 +143,74 @@ export const flattenEngineSchematics = (schematics: EngineSchematic[]) => {
   );
 };
 
-export const findPartNumbers = ({ symbols, numbers }: EngineSchematic) => {
-  const partNumberPositions = numbers.filter(({ validSymbolPositions }) =>
-    validSymbolPositions.some(
-      ({ x, y }) =>
-        !!symbols.find((symbol) => symbol.x === x && symbol.y === y),
-    ),
-  );
+export interface PartNumberPosition extends NumberPosition {
+  adjacentSymbols: SymbolPosition[];
+}
 
-  return partNumberPositions.map(({ value }) => parseInt(value, 10));
+export const toPartNumberPosition =
+  (symbols: SymbolPosition[]) =>
+  (numberPosition: NumberPosition): PartNumberPosition => {
+    const adjacentSymbols = symbols.filter(
+      (symbol) =>
+        !!numberPosition.validSymbolPositions.find(
+          ({ x, y }) => symbol.x === x && symbol.y === y,
+        ),
+    );
+
+    return {
+      ...numberPosition,
+      adjacentSymbols,
+    };
+  };
+
+export const findPartNumberPositions = ({
+  symbols,
+  numbers,
+}: EngineSchematic) => {
+  return numbers
+    .map(toPartNumberPosition(symbols))
+    .filter(({ adjacentSymbols }) => !!adjacentSymbols.length);
 };
 
-export const sumOfPartNumbers = (partNumbers: number[]) => {
-  return partNumbers.reduce((sum, next) => {
+export const findPartNumbers = (schematic: EngineSchematic) => {
+  return findPartNumberPositions(schematic).map(({ value }) =>
+    parseInt(value, 10),
+  );
+};
+
+export const byGearSymbol = (symbol: SymbolPosition) => symbol.value === "*";
+
+export const findGearParts = (schematic: EngineSchematic) => {
+  const partsGroupedByGearSymbol = schematic.symbols
+    .filter(byGearSymbol)
+    .map((symbol) => {
+      return {
+        symbol,
+        parts: findPartNumberPositions(schematic).filter(
+          ({ adjacentSymbols }) => {
+            return adjacentSymbols.includes(symbol);
+          },
+        ),
+      };
+    });
+
+  const gearPartPairs = partsGroupedByGearSymbol
+    .filter(({ parts }) => parts.length === 2)
+    .map(({ parts }) => parts);
+
+  return gearPartPairs as [PartNumberPosition, PartNumberPosition][];
+};
+
+export const calculateGearRatios = (
+  gearParts: [PartNumberPosition, PartNumberPosition][],
+) => {
+  return gearParts.map(
+    ([a, b]) => parseInt(a.value, 10) * parseInt(b.value, 10),
+  );
+};
+
+export const sumOf = (values: number[]) => {
+  return values.reduce((sum, next) => {
     return sum + next;
   }, 0);
 };

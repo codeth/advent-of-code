@@ -11,8 +11,9 @@ export type LineTransformer<Return = string> = (
 export type InputProcessor = (processLine: LineHandler) => Promise<void>;
 
 export const makeInputProcessor =
-  (directory: string) => async (processLine: LineHandler) => {
-    const file = await open(join(directory, "input.txt"));
+  (directory: string, filename = "input.txt") =>
+  async (processLine: LineHandler) => {
+    const file = await open(join(directory, filename));
 
     let index = 0;
 

@@ -10,18 +10,20 @@ test("returns the expected values from the example input", () => {
     "Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11",
   ].map(toCard);
 
-  const processedCards = processCards(cards);
-  const cardPoints = processedCards.map(({ points }) => points);
+  const { processedOriginalCards, totalCount } = processCards(cards);
+  const cardPoints = processedOriginalCards.map(({ points }) => points);
 
   expect(cardPoints).toEqual([8, 2, 2, 1, 0, 0]);
   expect(sumOf(cardPoints)).toEqual(13);
+  expect(totalCount).toEqual(30);
 });
 
 test("returns the correct sums from the input data", async () => {
   const cards = await parseScratchcardData();
 
-  const processedCards = processCards(cards);
-  const cardPoints = processedCards.map(({ points }) => points);
+  const { processedOriginalCards, totalCount } = processCards(cards);
+  const cardPoints = processedOriginalCards.map(({ points }) => points);
 
   expect(sumOf(cardPoints)).toEqual(28750);
+  expect(totalCount).toEqual(10212704);
 });

@@ -40,26 +40,77 @@ export const toCard = (data: string): Card => {
   };
 };
 
-export const processCards = (cards: Card[]): ProcessedCard[] => {
-  return cards.map((card) => {
-    const matches = card.winningNumbers.reduce<number[]>(
-      (results, winningNumber) => {
-        if (card.numbers.includes(winningNumber)) results.push(winningNumber);
-        return results;
-      },
-      [],
-    );
+export const byCardIdAscending = (a: Card, b: Card) => a.id - b.id;
 
-    const points = matches.reduce((result, _, index) => {
-      return index === 0 ? 1 : result * 2;
-    }, 0);
+export const processCards = (cards: Card[]) => {
+  const processedOriginalCards = cards
+    .map((card) => {
+      const matches = card.winningNumbers.reduce<number[]>(
+        (results, winningNumber) => {
+          if (card.numbers.includes(winningNumber)) results.push(winningNumber);
+          return results;
+        },
+        [],
+      );
 
-    return {
-      ...card,
-      matches,
-      points,
-    };
-  });
+      const points = matches.reduce((result, _, index) => {
+        return index === 0 ? 1 : result * 2;
+      }, 0);
+
+      return {
+        ...card,
+        matches,
+        points,
+      };
+    })
+    .sort(byCardIdAscending);
+
+  const cardCountMap = processedOriginalCards.reduce<Record<number, number>>(
+    (map, { id }) => {
+      return {
+        ...map,
+        [id]: 1,
+      };
+    },
+    {},
+  );
+
+  const resolveWinningCards = () => {
+    let nextCardIds = processedOriginalCards.map(({ id }) => id);
+
+    while (nextCardIds.length) {
+      const wonCardIds: number[] = [];
+
+      for (const cardId of nextCardIds) {
+        const card = processedOriginalCards[cardId - 1]!;
+
+        if (!card.matches.length) continue;
+
+        const wonIds = new Array(card.matches.length)
+          .fill(cardId + 1)
+          .map((id, index) => id + index);
+
+        wonIds.forEach((id) => {
+          cardCountMap[id]++;
+        });
+
+        wonCardIds.push(...wonIds);
+      }
+
+      nextCardIds = [...wonCardIds];
+    }
+  };
+
+  resolveWinningCards();
+
+  const totalCount = Object.values(cardCountMap).reduce((result, count) => {
+    return result + count;
+  }, 0);
+
+  return {
+    processedOriginalCards,
+    totalCount,
+  };
 };
 
 export const parseScratchcardData = async () => {

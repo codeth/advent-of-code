@@ -34,7 +34,7 @@ export interface AlmanacCategoryRangeMapper {
 }
 
 export interface Almanac {
-  seeds: number[];
+  seeds: [number, number][];
   seedToSoil: AlmanacCategoryRangeMapper;
   soilToFertilizer: AlmanacCategoryRangeMapper;
   fertilizerToWater: AlmanacCategoryRangeMapper;
@@ -74,8 +74,19 @@ export const toDataLine = (line: string): DataLine => {
 };
 
 export const parseSeeds = ({ value }: DataLine) => {
-  const [, ...seeds] = value.split(" ");
-  return seeds.map((num) => parseInt(num, 10));
+  const [, ...seedRanges] = value.split(" ");
+  return seedRanges
+    .map((num) => parseInt(num, 10))
+    .reduce<[number, number][]>((pairs, value) => {
+      const previous = pairs[pairs.length - 1];
+
+      if (previous && previous.length < 2) {
+        previous.push(value);
+        return pairs;
+      }
+
+      return [...pairs, [value] as unknown as [number, number]];
+    }, []);
 };
 
 export const parseMapStart = ({ value }: DataLine) => {
@@ -168,7 +179,60 @@ export const parseAlmanacData = async (inputProcessor = processInput) => {
   return createAlmanac(data);
 };
 
-export const collectSeedData = ({
+export const createSeed = (
+  id: number,
+  {
+    seedToSoil,
+    soilToFertilizer,
+    fertilizerToWater,
+    waterToLight,
+    lightToTemperature,
+    temperatureToHumidity,
+    humidityToLocation,
+  }: Almanac,
+) => {
+  const soil = seedToSoil.getDestination(id);
+  const fertilizer = soilToFertilizer.getDestination(soil);
+  const water = fertilizerToWater.getDestination(fertilizer);
+  const light = waterToLight.getDestination(water);
+  const temperature = lightToTemperature.getDestination(light);
+  const humidity = temperatureToHumidity.getDestination(temperature);
+  const location = humidityToLocation.getDestination(humidity);
+
+  return {
+    id,
+    soil,
+    fertilizer,
+    water,
+    light,
+    temperature,
+    humidity,
+    location,
+  };
+};
+
+export const collectSeedData = (almanac: Almanac) => {
+  return almanac.seeds.reduce<Seed[]>((results, [seedStart, length]) => {
+    const newSeeds: Seed[] = [];
+    let loops = 0;
+
+    while (loops < length) {
+      newSeeds.push(createSeed(seedStart + loops, almanac));
+      loops++;
+    }
+
+    return [...results, ...newSeeds];
+  }, []);
+};
+
+export const findSeedWithLowestLocation = (seeds: Seed[]) => {
+  return seeds.reduce<Seed | null>((result, seed) => {
+    if (!result || result.location > seed.location) return seed;
+    return result;
+  }, null);
+};
+
+export const findLowestLocation = ({
   seeds,
   seedToSoil,
   soilToFertilizer,
@@ -178,48 +242,30 @@ export const collectSeedData = ({
   temperatureToHumidity,
   humidityToLocation,
 }: Almanac) => {
-  return seeds.reduce<Seed[]>((results, seed) => {
-    const soil = seedToSoil.getDestination(seed);
-    const fertilizer = soilToFertilizer.getDestination(soil);
-    const water = fertilizerToWater.getDestination(fertilizer);
-    const light = waterToLight.getDestination(water);
-    const temperature = lightToTemperature.getDestination(light);
-    const humidity = temperatureToHumidity.getDestination(temperature);
-    const location = humidityToLocation.getDestination(humidity);
+  let lowestLocation: number | null = null;
 
-    if (
-      !fertilizer ||
-      !water ||
-      !light ||
-      !temperature ||
-      !humidity ||
-      !location
-    )
-      throw new Error(
-        `Unable to create seed ${seed}, missing one or more data mappings.`,
-      );
+  for (const [seedStart, length] of seeds) {
+    let loops = 0;
 
-    return [
-      ...results,
-      {
-        id: seed,
-        soil,
-        fertilizer,
-        water,
-        light,
-        temperature,
-        humidity,
-        location,
-      },
-    ];
-  }, []);
-};
+    while (loops < length) {
+      const seed = seedStart + loops;
+      const soil = seedToSoil.getDestination(seed);
+      const fertilizer = soilToFertilizer.getDestination(soil);
+      const water = fertilizerToWater.getDestination(fertilizer);
+      const light = waterToLight.getDestination(water);
+      const temperature = lightToTemperature.getDestination(light);
+      const humidity = temperatureToHumidity.getDestination(temperature);
+      const location = humidityToLocation.getDestination(humidity);
 
-export const findSeedWithLowestLocation = (seeds: Seed[]) => {
-  return seeds.reduce<Seed | null>((result, seed) => {
-    if (!result || result.location > seed.location) return seed;
-    return result;
-  }, null);
+      if (lowestLocation === null || location < lowestLocation) {
+        lowestLocation = location;
+      }
+
+      loops++;
+    }
+  }
+
+  return lowestLocation;
 };
 
 export const sumOf = (values: number[]) => {

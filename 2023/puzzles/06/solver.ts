@@ -24,9 +24,14 @@ export interface BoatRace extends BoatRaceData {
   outcomes: BoatRaceOutcome[];
 }
 
-export const toTimeAndDistance = (line: string): number[] => {
-  const digits = [...line.matchAll(/\d+/g)];
-  return digits.map((digit) => parseInt(digit[0], 10));
+export const toTimeAndDistance = (line: string): number => {
+  // Part 1
+  // const digits = [...line.matchAll(/\d+/g)];
+  // return digits.map((digit) => parseInt(digit[0], 10));
+
+  // Part 2
+  const digits = line.replace(/(Time|Distance):\s+/, "").replaceAll(/\s+/g, "");
+  return parseInt(digits, 10);
 };
 
 export const calculateOutcome = (
@@ -61,17 +66,21 @@ export const calculateOutcomes = ({
 };
 
 export const parseBoatRaceData = async (inputProcessor = processInput) => {
-  const [times, distances] = await inputToArray(
+  const [time, distance] = await inputToArray(
     inputProcessor,
     toTimeAndDistance,
   );
 
-  const data = times!.map<BoatRaceData>((time, index) => {
-    return {
-      time,
-      distance: distances![index]!,
-    };
-  });
+  // Part 1
+  // const data = times!.map<BoatRaceData>((time, index) => {
+  //   return {
+  //     time,
+  //     distance: distances![index]!,
+  //   };
+  // });
+
+  // Part 2
+  const data = [{ time, distance } as BoatRaceData];
 
   return data.map(calculateOutcomes);
 };

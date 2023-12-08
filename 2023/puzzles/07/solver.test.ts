@@ -10,7 +10,11 @@ test("returns the expected values from the example input", async () => {
 
   const rankedHands = rankHands(hands);
 
-  expect(totalWinnings(rankedHands)).toEqual(6440);
+  // Part 1
+  // expect(totalWinnings(rankedHands)).toEqual(6440);
+
+  // Part 2
+  expect(totalWinnings(rankedHands)).toEqual(5905);
 });
 
 test("returns the correct sums from the input data", async () => {
@@ -18,5 +22,9 @@ test("returns the correct sums from the input data", async () => {
 
   const rankedHands = rankHands(hands);
 
-  expect(totalWinnings(rankedHands)).toEqual(253603890);
+  // Part 1
+  // expect(totalWinnings(rankedHands)).toEqual(253603890);
+
+  // Part 2
+  expect(totalWinnings(rankedHands)).toEqual(253630098);
 });

@@ -10,6 +10,7 @@ export const processInput = makeInputProcessor(__dirname);
 export const processExampleInput = makeInputProcessor(__dirname, "example.txt");
 
 export const camelCards = [
+  "J",
   "2",
   "3",
   "4",
@@ -19,7 +20,6 @@ export const camelCards = [
   "8",
   "9",
   "T",
-  "J",
   "Q",
   "K",
   "A",
@@ -58,14 +58,35 @@ export interface RankedHandData extends HandData {
   rank: number;
 }
 
+export const getTypeForGroupSize = (size: number) => {
+  switch (size) {
+    case 5:
+      return HandType.fiveKind;
+    case 4:
+      return HandType.fourKind;
+    case 3:
+      return HandType.threeKind;
+    // Assumes dealing with a "group" means always more than one
+    case 2:
+    default:
+      return HandType.onePair;
+  }
+};
+
 export const getHandType = (hand: Hand): HandType => {
   if (hand.every((card) => card === hand[0])) {
     return HandType.fiveKind;
   }
 
-  if (hand.some((card) => hand.filter((c) => c === card).length > 1)) {
+  const jokers = hand.filter((card) => card === "J");
+
+  if (
+    hand.some((card) => hand.filter((c) => c === card).length > 1) ||
+    jokers.length
+  ) {
     const [groupA, groupB] = hand.reduce<CamelCard[][]>((groups, card) => {
-      if (groups.some((group) => group.includes(card))) return groups;
+      if (card === "J" || groups.some((group) => group.includes(card)))
+        return groups;
 
       const group = hand.filter((c) => c === card);
 
@@ -76,19 +97,17 @@ export const getHandType = (hand: Hand): HandType => {
       return groups;
     }, []);
 
-    if (!groupB) {
-      switch (groupA!.length) {
-        case 4:
-          return HandType.fourKind;
-        case 3:
-          return HandType.threeKind;
-        case 2:
-        default:
-          return HandType.onePair;
-      }
+    if (!groupA) {
+      // There are no groups, only jokers - Best hand is jokers with one other card
+      return getTypeForGroupSize(jokers.length + 1);
     }
 
-    if (groupA!.length === groupB.length) {
+    if (!groupB) {
+      // Just one group - Include any jokers to get the best hand
+      return getTypeForGroupSize([...groupA, ...jokers].length);
+    }
+
+    if (!jokers.length && groupA!.length === groupB.length) {
       return HandType.twoPair;
     }
 

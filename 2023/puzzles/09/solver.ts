@@ -15,7 +15,10 @@ export interface OasisEnvironmentalRecord {
 }
 
 export interface OasisEnvironmentalForecast extends OasisEnvironmentalRecord {
-  predictions: number[];
+  predictions: {
+    past: number[];
+    future: number[];
+  };
 }
 
 export const getSequence = (readings: number[]) => {
@@ -46,17 +49,24 @@ export const getSequences = (readings: number[]) => {
   return sequences;
 };
 
-export const predictNextReading = (record: OasisEnvironmentalRecord) => {
+export const predictNextReading = (
+  record: OasisEnvironmentalRecord,
+  predictHistory = false,
+) => {
   const nextValues = record.sequences
     .reverse()
     .reduce<number[]>((results, seq, index) => {
-      const latestValue = seq[seq.length - 1]!;
+      const latestValue = seq[predictHistory ? 0 : seq.length - 1]!;
 
       if (index === 0) return [latestValue];
 
       const previousResult = results[results.length - 1]!;
 
-      return [...results, latestValue + previousResult];
+      const next = predictHistory
+        ? latestValue - previousResult
+        : latestValue + previousResult;
+
+      return [...results, next];
     }, []);
 
   return nextValues.pop()!;
@@ -67,7 +77,10 @@ export const generateForecasts = (
 ): OasisEnvironmentalForecast[] => {
   return records.map((record) => ({
     ...record,
-    predictions: [predictNextReading(record)],
+    predictions: {
+      past: [predictNextReading(record, true)],
+      future: [predictNextReading(record)],
+    },
   }));
 };
 
